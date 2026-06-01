@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driftera — Aviation MRO Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0B1220;
+    --navy-2: #111827;
+    --navy-3: #1a2540;
+    --amber: #E8A020;
+    --amber-dim: #B87A10;
+    --amber-glow: rgba(232,160,32,0.12);
+    --amber-glow2: rgba(232,160,32,0.06);
+    --ice: #D4E4F0;
+    --ice-dim: #8BA4B8;
+    --white: #F5F0E8;
+    --muted: #6B7A8D;
+    --border: rgba(212,228,240,0.10);
+    --border-amber: rgba(232,160,32,0.25);
+    --font-serif: 'Instrument Serif', Georgia, serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-sans: 'Outfit', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 3.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,18,32,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .logo-dot {
+    width: 7px; height: 7px;
+    background: var(--amber);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.75); }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.4rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--ice-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    cursor: pointer;
+  }
+
+  .nav-links a:hover, .nav-links a.active { color: var(--amber); }
+
+  .nav-cta {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.4rem;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .nav-cta:hover {
+    background: var(--amber);
+    color: var(--navy);
+  }
+
+  /* ─── PAGES ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding: 8rem 3.5rem 5rem;
+    overflow: hidden;
+  }
+
+  .hero-grid-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212,228,240,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,228,240,0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(232,160,32,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+
+  .hero-glow-2 {
+    position: absolute;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(212,228,240,0.04) 0%, transparent 70%);
+    bottom: 100px; left: 200px;
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 30px; height: 1px;
+    background: var(--amber);
+  }
+
+  .hero-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(3rem, 5.5vw, 5.2rem);
+    line-height: 1.08;
+    font-weight: 400;
+    max-width: 820px;
+    margin-bottom: 2rem;
+    color: var(--white);
+  }
+
+  .hero-headline em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--ice-dim);
+    max-width: 560px;
+    margin-bottom: 3.2rem;
+    line-height: 1.75;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--amber);
+    color: var(--navy);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.85rem 2rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary:hover { background: #d4911a; }
+
+  .btn-ghost {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ice-dim);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-ghost:hover { color: var(--white); }
+
+  .hero-stats {
+    position: absolute;
+    bottom: 3.5rem;
+    right: 3.5rem;
+    display: flex;
+    gap: 3rem;
+  }
+
+  .stat-item { text-align: right; }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.7rem;
+    font-weight: 500;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .stat-value span { color: var(--amber); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 3.5rem;
+    left: 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .scroll-line {
+    width: 40px; height: 1px;
+    background: var(--muted);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scroll-line::after {
+    content: '';
+    position: absolute;
+    left: -100%; top: 0;
+    width: 100%; height: 100%;
+    background: var(--amber);
+    animation: scanline 2s linear infinite;
+  }
+
+  @keyframes scanline {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  .scroll-text {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ─── SECTIONS ─── */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 7rem 3.5rem;
+  }
+
+  .section-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .section-tag::before {
+    content: '';
+    display: inline-block;
+    width: 20px; height: 1px;
+    background: var(--amber);
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.5vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.12;
+    color: var(--white);
+    margin-bottom: 1.2rem;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .section-body {
+    font-size: 1rem;
+    color: var(--ice-dim);
+    max-width: 560px;
+    line-height: 1.8;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 3.5rem;
+  }
+
+  /* ─── PROBLEM SECTION ─── */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    margin-top: 4rem;
+    align-items: start;
+  }
+
+  .problem-numbers {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .prob-num {
+    border-left: 1px solid var(--border-amber);
+    padding-left: 1.5rem;
+  }
+
+  .prob-num-value {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: var(--amber);
+    line-height: 1;
+  }
+
+  .prob-num-label {
+    font-size: 0.88rem;
+    color: var(--ice-dim);
+    margin-top: 0.35rem;
+    line-height: 1.5;
+  }
+
+  .problem-text p {
+    font-size: 1rem;
+    color: var(--ice-dim);
+    line-height: 1.85;
+    margin-bottom: 1.2rem;
+  }
+
+  .problem-text p strong {
+    color: var(--white);
+    font-weight: 500;
+  }
+
+  /* ─── PRODUCT SECTION ─── */
+  .product-tabs {
+    display: flex;
+    gap: 0;
+    margin: 3rem 0 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.85rem 1.8rem;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--ice-dim); }
+
+  .tab-panel {
+    display: none;
+    padding: 3rem 0;
+  }
+
+  .tab-panel.active { display: grid; grid-template-columns: 1fr 1.3fr; gap: 4rem; align-items: start; }
+
+  .tab-content h3 {
+    font-family: var(--font-serif);
+    font-size: 1.7rem;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 1rem;
+    line-height: 1.25;
+  }
+
+  .tab-content p {
+    font-size: 0.95rem;
+    color: var(--ice-dim);
+    line-height: 1.8;
+    margin-bottom: 1.2rem;
+  }
+
+  .feature-list {
+    list-style: none;
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    font-size: 0.88rem;
+    color: var(--ice-dim);
+  }
+
+  .feature-list li::before {
+    content: '→';
+    color: var(--amber);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+    margin-top: 0.05em;
+  }
+
+  .tab-visual {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tab-visual::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--amber);
+  }
+
+  .mock-header {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mock-dot-row {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .mock-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .mock-dot.amber { background: var(--amber); }
+
+  /* Mock data rows */
+  .mock-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .mock-row.header { color: var(--muted); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .mock-row.data { color: var(--ice-dim); }
+
+  .risk-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .risk-high { background: rgba(232,80,50,0.15); color: #E85032; border: 1px solid rgba(232,80,50,0.3); }
+  .risk-med  { background: rgba(232,160,32,0.15); color: var(--amber); border: 1px solid var(--border-amber); }
+  .risk-low  { background: rgba(40,180,100,0.12); color: #28B464; border: 1px solid rgba(40,180,100,0.25); }
+
+  /* Progress bars */
+  .prog-bar-wrap {
+    background: rgba(212,228,240,0.05);
+    height: 4px;
+    margin: 0.4rem 0;
+    overflow: hidden;
+  }
+
+  .prog-bar {
+    height: 100%;
+    background: var(--amber);
+  }
+
+  /* ─── HOW IT WORKS ─── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 4rem;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 1.7rem;
+    left: 12.5%;
+    right: 12.5%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .step {
+    padding: 0 1.5rem 0 0;
+    position: relative;
+  }
+
+  .step-num {
+    width: 3.5rem; height: 3.5rem;
+    border: 1px solid var(--border-amber);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--amber);
+    margin-bottom: 1.5rem;
+    background: var(--navy);
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 0.6rem;
+    line-height: 1.3;
+  }
+
+  .step-body {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ─── OUTCOMES ─── */
+  .outcomes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .outcome-card {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+    transition: border-color 0.25s;
+  }
+
+  .outcome-card:hover { border-color: var(--border-amber); }
+
+  .outcome-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: transparent;
+    transition: background 0.25s;
+  }
+
+  .outcome-card:hover::after { background: var(--amber); }
+
+  .outcome-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .outcome-metric {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .outcome-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+
+  .outcome-body {
+    font-size: 0.83rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ─── FOUNDER ─── */
+  .founder-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 6rem;
+    align-items: center;
+    min-height: 85vh;
+  }
+
+  .founder-portrait {
+    position: relative;
+  }
+
+  .founder-frame {
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: var(--navy-3);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .founder-initials {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-size: 5rem;
+    font-style: italic;
+    color: rgba(232,160,32,0.25);
+    letter-spacing: 0.05em;
+  }
+
+  .founder-corner {
+    position: absolute;
+    width: 30px; height: 30px;
+    border-color: var(--amber);
+    border-style: solid;
+  }
+
+  .fc-tl { top: 12px; left: 12px; border-width: 1px 0 0 1px; }
+  .fc-br { bottom: 12px; right: 12px; border-width: 0 1px 1px 0; }
+
+  .founder-name-tag {
+    position: absolute;
+    bottom: -1px; left: -1px;
+    background: var(--amber);
+    color: var(--navy);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    font-weight: 500;
+  }
+
+  .founder-content { }
+
+  .founder-quote {
+    font-family: var(--font-serif);
+    font-size: clamp(1.6rem, 2.5vw, 2.5rem);
+    font-style: italic;
+    line-height: 1.35;
+    color: var(--white);
+    margin: 1.5rem 0 2rem;
+  }
+
+  .founder-quote::before {
+    content: '"';
+    color: var(--amber);
+    font-size: 4rem;
+    line-height: 0;
+    vertical-align: -0.5em;
+    margin-right: 0.1em;
+    opacity: 0.6;
+  }
+
+  .founder-bio {
+    font-size: 0.95rem;
+    color: var(--ice-dim);
+    line-height: 1.85;
+    margin-bottom: 1.5rem;
+  }
+
+  .founder-creds {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 2rem;
+  }
+
+  .cred-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .cred-item::before {
+    content: '//';
+    color: var(--amber);
+    font-size: 0.7rem;
+    opacity: 0.6;
+  }
+
+  /* ─── CONTACT ─── */
+  .contact-inner {
+    max-width: 720px;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 4rem;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .form-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .form-input {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-weight: 300;
+    resize: none;
+  }
+
+  .form-input:focus { border-color: var(--amber); }
+  .form-input::placeholder { color: var(--muted); }
+
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .contact-block {}
+
+  .contact-block-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-block-value {
+    font-size: 0.95rem;
+    color: var(--ice-dim);
+    line-height: 1.65;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer-logo {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .footer-links a {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--amber); }
+
+  /* ─── RUNWAY TICKER ─── */
+  .ticker-bar {
+    background: rgba(232,160,32,0.06);
+    border-top: 1px solid var(--border-amber);
+    border-bottom: 1px solid var(--border-amber);
+    padding: 0.65rem 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ticker-track {
+    display: flex;
+    gap: 0;
+    white-space: nowrap;
+    animation: ticker 28s linear infinite;
+  }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    opacity: 0.6;
+    padding: 0 3rem;
+    flex-shrink: 0;
+  }
+
+  .ticker-item span { color: var(--white); opacity: 1; }
+
+  /* ─── ANIMATE ON SCROLL ─── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  .fade-up-delay-1 { transition-delay: 0.1s; }
+  .fade-up-delay-2 { transition-delay: 0.2s; }
+  .fade-up-delay-3 { transition-delay: 0.3s; }
+  .fade-up-delay-4 { transition-delay: 0.4s; }
+
+  /* ─── INLINE CHART MOCK ─── */
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 80px;
+    margin-top: 1rem;
+  }
+
+  .chart-bar {
+    flex: 1;
+    background: rgba(232,160,32,0.25);
+    position: relative;
+    transition: background 0.2s;
+    min-height: 4px;
+  }
+
+  .chart-bar.highlight { background: var(--amber); }
+
+  /* ─── MOBILE HAMBURGER ─── */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .hamburger span { width: 22px; height: 1px; background: var(--ice-dim); display: block; transition: all 0.2s; }
+
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    section { padding: 5rem 1.5rem; }
+    .hero { padding: 7rem 1.5rem 5rem; }
+    .hero-stats { position: static; margin-top: 3rem; flex-wrap: wrap; gap: 2rem; justify-content: flex-start; }
+    .scroll-indicator { display: none; }
+    .problem-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .steps::before { display: none; }
+    .outcomes-grid { grid-template-columns: 1fr; }
+    .founder-section { grid-template-columns: 1fr; gap: 3rem; }
+    .founder-frame { aspect-ratio: 1; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .tab-panel.active { grid-template-columns: 1fr; }
+    .footer { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+    .divider { margin: 0 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#" onclick="showPage('home')">
+    <span class="logo-dot"></span>
+    DRIFTERA
+  </a>
+  <ul class="nav-links">
+    <li><a onclick="showPage('home')" id="nav-home" class="active">Home</a></li>
+    <li><a onclick="showPage('product')" id="nav-product">Product</a></li>
+    <li><a onclick="showPage('why')" id="nav-why">Why Now</a></li>
+    <li><a onclick="showPage('founder')" id="nav-founder">Founder</a></li>
+    <li><a onclick="showPage('contact')" id="nav-contact">Contact</a></li>
+  </ul>
+  <a class="nav-cta" onclick="showPage('contact')">Request Demo</a>
+  <div class="hamburger" onclick="toggleMobile()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     PAGE: HOME
+═══════════════════════════════════════ -->
+<div id="page-home" class="page active">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-grid-lines"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+    <div class="hero-tag">Aviation MRO Intelligence</div>
+    <h1 class="hero-headline fade-up">
+      The aircraft that doesn't<br>fail is the one <em>someone<br>predicted</em> would.
+    </h1>
+    <p class="hero-sub fade-up fade-up-delay-1">
+      Driftera brings predictive failure intelligence, automated airworthiness documentation, 
+      and parts demand forecasting to the $84B aviation MRO industry — before the next AOG event costs you another $20K/hour.
+    </p>
+    <div class="hero-actions fade-up fade-up-delay-2">
+      <a class="btn-primary" onclick="showPage('product')">See the Platform →</a>
+      <a class="btn-ghost" onclick="showPage('contact')">Schedule a Demo ↗</a>
+    </div>
+    <div class="hero-stats fade-up fade-up-delay-3">
+      <div class="stat-item">
+        <div class="stat-value">$84<span>B</span></div>
+        <div class="stat-label">Global MRO Market (2025)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">$20<span>K</span></div>
+        <div class="stat-label">Cost per grounded hour</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">35<span>%</span></div>
+        <div class="stat-label">Unplanned downtime reduced</div>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <span class="scroll-text">Scroll to explore</span>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span class="ticker-item">Component Failure Prediction <span>↓ 35% Unplanned Events</span></span>
+      <span class="ticker-item">Airworthiness Documentation <span>Automated</span></span>
+      <span class="ticker-item">Spare Parts Forecasting <span>Real-time Demand Intelligence</span></span>
+      <span class="ticker-item">Maintenance Bay Scheduling <span>Optimised Throughput</span></span>
+      <span class="ticker-item">AOG Prevention <span>↑ Dispatch Reliability to 99%+</span></span>
+      <span class="ticker-item">MRO Market <span>$84B and growing</span></span>
+      <!-- repeat -->
+      <span class="ticker-item">Component Failure Prediction <span>↓ 35% Unplanned Events</span></span>
+      <span class="ticker-item">Airworthiness Documentation <span>Automated</span></span>
+      <span class="ticker-item">Spare Parts Forecasting <span>Real-time Demand Intelligence</span></span>
+      <span class="ticker-item">Maintenance Bay Scheduling <span>Optimised Throughput</span></span>
+      <span class="ticker-item">AOG Prevention <span>↑ Dispatch Reliability to 99%+</span></span>
+      <span class="ticker-item">MRO Market <span>$84B and growing</span></span>
+    </div>
+  </div>
+
+  <!-- PROBLEM SECTION -->
+  <section>
+    <div class="section-tag">The Problem</div>
+    <h2 class="section-title">Aviation runs on <em>reactive<br>maintenance.</em> It shouldn't.</h2>
+
+    <div class="problem-grid">
+      <div class="problem-numbers">
+        <div class="prob-num fade-up">
+          <div class="prob-num-value">$20K</div>
+          <div class="prob-num-label">Lost per hour an aircraft is on the ground unexpectedly. An AOG event on a widebody can cascade into hundreds of thousands in 24 hours.</div>
+        </div>
+        <div class="prob-num fade-up fade-up-delay-1">
+          <div class="prob-num-value">59%</div>
+          <div class="prob-num-label">Of operators still run mixed, non-standardised maintenance platforms — siloed data, slow handoffs, compliance gaps.</div>
+        </div>
+        <div class="prob-num fade-up fade-up-delay-2">
+          <div class="prob-num-value">6,000+</div>
+          <div class="prob-num-label">Aircraft globally being considered for predictive maintenance retrofitting in 2025 alone. The window is open.</div>
+        </div>
+        <div class="prob-num fade-up fade-up-delay-3">
+          <div class="prob-num-value">$300M</div>
+          <div class="prob-num-label">In equity directed at predictive MRO platforms in 2024. Institutional conviction is high — operator adoption is lagging.</div>
+        </div>
+      </div>
+      <div class="problem-text fade-up">
+        <p>Most airlines know a component failed the moment it grounds their aircraft. <strong>Driftera makes that failure visible weeks before it happens.</strong></p>
+        <p>Today's MRO operations are split across paper checklists, calendar-based schedules, fragmented inventory systems, and manual compliance reporting. When something fails, engineers react. When parts run out, operations halt. When regulators ask for documentation, someone scrambles.</p>
+        <p>The data to prevent all of this already exists — in sensor feeds, flight logs, maintenance records, OEM bulletins. <strong>It just hasn't been connected yet.</strong></p>
+        <p>Driftera connects it. We ingest raw operational data, run failure-mode models trained on cross-fleet histories, and surface prescriptive recommendations before the runway shortens.</p>
+        <div class="chart-bars">
+          <div class="chart-bar" style="height:30%"></div>
+          <div class="chart-bar" style="height:45%"></div>
+          <div class="chart-bar" style="height:38%"></div>
+          <div class="chart-bar" style="height:62%"></div>
+          <div class="chart-bar" style="height:55%"></div>
+          <div class="chart-bar" style="height:70%"></div>
+          <div class="chart-bar highlight" style="height:88%"></div>
+          <div class="chart-bar" style="height:75%"></div>
+          <div class="chart-bar" style="height:65%"></div>
+          <div class="chart-bar" style="height:82%"></div>
+          <div class="chart-bar highlight" style="height:95%"></div>
+          <div class="chart-bar" style="height:78%"></div>
+          <div class="chart-bar" style="height:90%"></div>
+          <div class="chart-bar" style="height:84%"></div>
+          <div class="chart-bar" style="height:92%"></div>
+        </div>
+        <p style="font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 0.5rem; margin-bottom: 0;">Predictive tech adoption in MRO investment — 11% → 18% in two years. Trend line is clear.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- OUTCOMES PREVIEW -->
+  <section>
+    <div class="section-tag">What Changes</div>
+    <h2 class="section-title">Numbers that airline CFOs<br>actually <em>care about.</em></h2>
+
+    <div class="outcomes-grid">
+      <div class="outcome-card fade-up">
+        <div class="outcome-metric">35%</div>
+        <div class="outcome-title">Fewer Unscheduled Maintenance Events</div>
+        <div class="outcome-body">Airlines using AI-driven diagnostics have consistently reduced unscheduled AOG interventions. Less scrambling, more planning.</div>
+      </div>
+      <div class="outcome-card fade-up fade-up-delay-1">
+        <div class="outcome-metric">99%+</div>
+        <div class="outcome-title">Dispatch Reliability</div>
+        <div class="outcome-body">Platforms with predictive capability push departure reliability above 99%. Every point matters at scale when you run hundreds of rotations daily.</div>
+      </div>
+      <div class="outcome-card fade-up fade-up-delay-2">
+        <div class="outcome-metric">27%</div>
+        <div class="outcome-title">Operational Cost Reduction</div>
+        <div class="outcome-body">Across fleets adopting predictive retrofit solutions, operational savings of up to 27% over legacy systems are documented and auditable.</div>
+      </div>
+      <div class="outcome-card fade-up fade-up-delay-3">
+        <div class="outcome-metric">6mo</div>
+        <div class="outcome-title">Failure Predictions in Advance</div>
+        <div class="outcome-body">Some platforms now flag maintenance needs up to six months ahead. Driftera's models are built to push that window further — with part-level specificity.</div>
+      </div>
+      <div class="outcome-card fade-up fade-up-delay-4">
+        <div class="outcome-metric">12%</div>
+        <div class="outcome-title">Longer Component Lifecycles</div>
+        <div class="outcome-body">Proactive maintenance extends the useful life of expensive components. $50,000 parts last longer when you stop guessing and start measuring.</div>
+      </div>
+      <div class="outcome-card fade-up">
+        <div class="outcome-metric">80%</div>
+        <div class="outcome-title">Compliance Time Saved</div>
+        <div class="outcome-body">Automated airworthiness documentation generation eliminates the manual paperwork burden — freeing engineers to maintain aircraft, not bureaucracy.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: PRODUCT
+═══════════════════════════════════════ -->
+<div id="page-product" class="page">
+
+  <section style="padding-top: 10rem;">
+    <div class="section-tag">The Platform</div>
+    <h2 class="section-title">Four modules. <em>One operating system</em><br>for every MRO decision.</h2>
+    <p class="section-body">Driftera integrates sensor telemetry, maintenance records, OEM bulletins, parts inventory, and regulatory frameworks into a unified intelligence layer — with each module designed to be deployed independently or as a complete stack.</p>
+
+    <div class="product-tabs">
+      <button class="tab-btn active" onclick="switchTab('predict')">01 — Predict</button>
+      <button class="tab-btn" onclick="switchTab('docs')">02 — Docs</button>
+      <button class="tab-btn" onclick="switchTab('parts')">03 — Parts</button>
+      <button class="tab-btn" onclick="switchTab('sched')">04 — Schedule</button>
+    </div>
+
+    <!-- TAB: PREDICT -->
+    <div id="tab-predict" class="tab-panel active">
+      <div class="tab-content">
+        <h3>Component Failure<br>Prediction Engine</h3>
+        <p>Driftera's predictive models ingest real-time sensor telemetry, historical maintenance records, flight cycle data, and OEM reliability bulletins to calculate time-to-failure probability distributions for individual components.</p>
+        <p>Unlike rule-based alerts, our models reason across cross-fleet histories — meaning patterns visible in one operator's 737 fleet inform predictions for another's A320 operation.</p>
+        <ul class="feature-list">
+          <li>Per-component failure probability scored daily</li>
+          <li>Anomaly detection across 500+ real-world fault scenarios</li>
+          <li>6-month forward planning horizon on high-risk parts</li>
+          <li>Root cause linkage across interdependent subsystems</li>
+          <li>EHM (Engine Health Monitoring) integration out-of-box</li>
+          <li>Integrates with AMOS, TRAX, and SAP PM</li>
+        </ul>
+      </div>
+      <div class="tab-visual">
+        <div class="mock-header">
+          <span>Component Risk Dashboard</span>
+          <div class="mock-dot-row"><div class="mock-dot amber"></div><div class="mock-dot"></div><div class="mock-dot"></div></div>
+        </div>
+        <div class="mock-row header">
+          <span>Component</span><span>Fleet Risk</span><span>Horizon</span>
+        </div>
+        <div class="mock-row data">
+          <span>APU — Bleed Valve</span><span><span class="risk-badge risk-high">Critical</span></span><span>14 days</span>
+        </div>
+        <div class="mock-row data">
+          <span>Engine 2 — HPC Blade</span><span><span class="risk-badge risk-high">High</span></span><span>28 days</span>
+        </div>
+        <div class="mock-row data">
+          <span>MLG — Actuator Seal</span><span><span class="risk-badge risk-med">Moderate</span></span><span>62 days</span>
+        </div>
+        <div class="mock-row data">
+          <span>IDG — Coolant Line</span><span><span class="risk-badge risk-med">Moderate</span></span><span>75 days</span>
+        </div>
+        <div class="mock-row data">
+          <span>Flap Track Bearing A7</span><span><span class="risk-badge risk-low">Low</span></span><span>120 days</span>
+        </div>
+        <div style="margin-top: 1.5rem; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.6rem;">Fleet Health Score — VT-AXL</div>
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width: 78%"></div></div>
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted); margin-top: 0.3rem;">
+          <span>78 / 100</span><span>↑ 4pts from last cycle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: DOCS -->
+    <div id="tab-docs" class="tab-panel">
+      <div class="tab-content">
+        <h3>Airworthiness<br>Documentation Automation</h3>
+        <p>Every maintenance action requires paperwork. Logbook entries, task card sign-offs, airworthiness release certificates, FAA Form 8130-3, EASA Form 1 — the volume of compliance documentation in aviation MRO is staggering.</p>
+        <p>Driftera auto-generates compliant documentation from maintenance actions as they're logged — pulling component data, technician credentials, parts traceability, and regulatory references into structured, audit-ready records.</p>
+        <ul class="feature-list">
+          <li>Auto-generation of work order completions and sign-offs</li>
+          <li>FAA, EASA, DGCA regulatory template library</li>
+          <li>Digital technician signatures with credential verification</li>
+          <li>Parts 8130-3 / Form 1 traceability chains</li>
+          <li>Continuous airworthiness record export for lessors</li>
+          <li>Audit trail immutability with timestamped versioning</li>
+        </ul>
+      </div>
+      <div class="tab-visual">
+        <div class="mock-header">
+          <span>Documentation Queue</span>
+          <div class="mock-dot-row"><div class="mock-dot amber"></div><div class="mock-dot"></div><div class="mock-dot"></div></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.5rem;">
+          <div style="border: 1px solid var(--border); padding: 0.85rem; position: relative;">
+            <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.3rem;">Auto-generated · EASA Form 1</div>
+            <div style="font-size: 0.82rem; color: var(--white);">APU Bleed Valve Replacement — VT-AXL</div>
+            <div style="position: absolute; top: 0.85rem; right: 0.85rem; font-family: var(--font-mono); font-size: 0.6rem; color: #28B464;">● READY</div>
+          </div>
+          <div style="border: 1px solid var(--border); padding: 0.85rem; position: relative;">
+            <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.3rem;">Generating · Work Order Closeout</div>
+            <div style="font-size: 0.82rem; color: var(--white);">C-Check Bay 3 — Phase 4 Sign-off</div>
+            <div style="position: absolute; top: 0.85rem; right: 0.85rem; font-family: var(--font-mono); font-size: 0.6rem; color: var(--amber);">◐ DRAFT</div>
+          </div>
+          <div style="border: 1px solid var(--border); padding: 0.85rem; position: relative;">
+            <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.3rem;">Pending · FAA 8130-3</div>
+            <div style="font-size: 0.82rem; color: var(--white);">HPC Blade Set — Part No. 1254-AX-9</div>
+            <div style="position: absolute; top: 0.85rem; right: 0.85rem; font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted);">○ QUEUE</div>
+          </div>
+        </div>
+        <div style="margin-top: 1.5rem; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.06em;">
+          <span style="color: var(--amber);">82%</span> documentation time saved vs manual process
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: PARTS -->
+    <div id="tab-parts" class="tab-panel">
+      <div class="tab-content">
+        <h3>Spare Parts Demand<br>Forecasting</h3>
+        <p>Aircraft parts don't expire on the shelf — they expire when a plane is grounded waiting for them. Driftera's demand forecasting engine predicts parts consumption at the fleet level, accounting for seasonal patterns, utilisation rates, and component failure probabilities.</p>
+        <p>Integration with supplier networks and leasing pools means recommended procurement actions are actionable in one click — not buried in a spreadsheet.</p>
+        <ul class="feature-list">
+          <li>SKU-level 90-day demand forecasts per fleet</li>
+          <li>AOG pool prioritisation based on failure risk scores</li>
+          <li>Multi-supplier lead time modelling</li>
+          <li>Auto-reorder triggers linked to failure predictions</li>
+          <li>USM (Used Serviceable Material) opportunity flagging</li>
+          <li>Inventory carrying cost optimisation</li>
+        </ul>
+      </div>
+      <div class="tab-visual">
+        <div class="mock-header">
+          <span>Parts Demand — 90d Forecast</span>
+          <div class="mock-dot-row"><div class="mock-dot amber"></div><div class="mock-dot"></div><div class="mock-dot"></div></div>
+        </div>
+        <div class="mock-row header">
+          <span>Part / SKU</span><span>Forecast Qty</span><span>Action</span>
+        </div>
+        <div class="mock-row data">
+          <span>Bleed Valve Assembly</span><span style="color: var(--amber);">↑ 3 units</span><span style="font-size: 0.68rem; color: #E85032;">Order Now</span>
+        </div>
+        <div class="mock-row data">
+          <span>O-Ring Kit HPC-9</span><span>12 units</span><span style="font-size: 0.68rem; color: var(--amber);">Review</span>
+        </div>
+        <div class="mock-row data">
+          <span>Hydraulic Filter MK2</span><span>8 units</span><span style="font-size: 0.68rem; color: #28B464;">Stocked</span>
+        </div>
+        <div class="mock-row data">
+          <span>MLG Actuator Seal</span><span>2 units</span><span style="font-size: 0.68rem; color: var(--amber);">USM Available</span>
+        </div>
+        <div class="mock-row data">
+          <span>IDG Coolant Gasket</span><span>6 units</span><span style="font-size: 0.68rem; color: #28B464;">Stocked</span>
+        </div>
+        <div style="margin-top: 1.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Inventory Health</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" style="width: 65%; background: #28B464;"></div></div>
+          <div style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--muted); margin-top: 0.3rem;">65% optimal · 2 critical gaps flagged</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SCHEDULE -->
+    <div id="tab-sched" class="tab-panel">
+      <div class="tab-content">
+        <h3>Maintenance Bay<br>Scheduling Optimisation</h3>
+        <p>A plane grounded in a hangar is a plane not earning revenue. Driftera's scheduling engine optimises maintenance bay utilisation by sequencing aircraft checks against bay capacity, technician certifications, tooling availability, and parts procurement windows.</p>
+        <p>The output isn't a gantt chart — it's a live, adaptive schedule that re-optimises automatically when a new AOG event or parts delay enters the picture.</p>
+        <ul class="feature-list">
+          <li>Bay capacity planning across A/B/C/D check types</li>
+          <li>Technician certification and shift matching</li>
+          <li>Task parallelisation to minimise ground time</li>
+          <li>Dynamic re-sequencing on AOG or delay events</li>
+          <li>Integration with crew rostering systems</li>
+          <li>Revenue impact scoring per schedule scenario</li>
+        </ul>
+      </div>
+      <div class="tab-visual">
+        <div class="mock-header">
+          <span>Bay Utilisation — Week 24</span>
+          <div class="mock-dot-row"><div class="mock-dot amber"></div><div class="mock-dot"></div><div class="mock-dot"></div></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between;">
+            <span>Bay</span><span>Mon–Sun</span><span>Utilisation</span>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ice-dim); margin-bottom: 0.3rem;"><span>Bay A</span><span style="color: var(--amber);">B-Check · VT-AXL</span><span>94%</span></div>
+            <div class="prog-bar-wrap"><div class="prog-bar" style="width: 94%;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ice-dim); margin-bottom: 0.3rem;"><span>Bay B</span><span style="color: #28B464;">A-Check · VT-BDK</span><span>78%</span></div>
+            <div class="prog-bar-wrap"><div class="prog-bar" style="width: 78%; background: #28B464;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ice-dim); margin-bottom: 0.3rem;"><span>Bay C</span><span style="color: #E85032;">AOG Hold · VT-CEP</span><span>100%</span></div>
+            <div class="prog-bar-wrap"><div class="prog-bar" style="width: 100%; background: #E85032;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ice-dim); margin-bottom: 0.3rem;"><span>Bay D</span><span>Available</span><span>22%</span></div>
+            <div class="prog-bar-wrap"><div class="prog-bar" style="width: 22%; background: rgba(212,228,240,0.2);"></div></div>
+          </div>
+        </div>
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted);">
+          ↻ Auto-rescheduled Bay C entry to Bay D — ETA −18hr vs manual
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <div class="divider"></div>
+  <section>
+    <div class="section-tag">Integration</div>
+    <h2 class="section-title">Connected in days,<br>not <em>quarters.</em></h2>
+    <p class="section-body" style="margin-bottom: 0;">Driftera is designed to sit on top of existing systems — not replace them. We ingest your data, layer intelligence on it, and surface insights without touching your core stack.</p>
+
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">01</div>
+        <div class="step-title">Data Ingestion</div>
+        <div class="step-body">Connect sensor telemetry, AMOS/TRAX/SAP records, flight logs, and OEM bulletins via API or flat file. We model around your existing schema.</div>
+      </div>
+      <div class="step fade-up fade-up-delay-1">
+        <div class="step-num">02</div>
+        <div class="step-title">Model Calibration</div>
+        <div class="step-body">Fleet-specific models are calibrated against your historical maintenance events. Driftera's cross-fleet priors accelerate cold-start accuracy.</div>
+      </div>
+      <div class="step fade-up fade-up-delay-2">
+        <div class="step-num">03</div>
+        <div class="step-title">Live Intelligence</div>
+        <div class="step-body">Predictions, documentation drafts, parts alerts, and schedule recommendations surface daily in your dashboard or via API to existing tooling.</div>
+      </div>
+      <div class="step fade-up fade-up-delay-3">
+        <div class="step-num">04</div>
+        <div class="step-title">Continuous Learning</div>
+        <div class="step-body">Every maintenance action, parts order, and schedule decision feeds back into the model — improving predictions with each flight cycle.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: WHY NOW
+═══════════════════════════════════════ -->
+<div id="page-why" class="page">
+  <section style="padding-top: 10rem;">
+    <div class="section-tag">Market Timing</div>
+    <h2 class="section-title">The data is ready.<br>The tools are ready.<br><em>Most operators aren't.</em></h2>
+    <p class="section-body">That gap is where Driftera operates.</p>
+
+    <div style="margin-top: 5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+      <div>
+        <p style="font-size: 0.95rem; color: var(--ice-dim); line-height: 1.85; margin-bottom: 1.5rem;">
+          The global commercial aircraft fleet grew from 34,000 in 2025 and is projected to hit 44,600 by 2034. 
+          Narrowbodies — the workhorses of LCC and regional carriers — run the highest utilisation rates, 
+          which means the most frequent maintenance cycles, the most documentation, the most exposure to AOG risk.
+        </p>
+        <p style="font-size: 0.95rem; color: var(--ice-dim); line-height: 1.85; margin-bottom: 1.5rem;">
+          Predictive maintenance now accounts for 18% of total MRO investment — up from 11% two years ago. 
+          The institutional shift is underway, but the majority of the market still runs on reactive systems. 
+          <strong style="color: var(--white);">That gap doesn't close automatically. Someone has to close it.</strong>
+        </p>
+        <p style="font-size: 0.95rem; color: var(--ice-dim); line-height: 1.85;">
+          Airbus Skywise aggregates data from 11,000+ aircraft. United Airlines used predictive AI to prevent 
+          300+ out-of-service events in 2024 alone. The results are unambiguous. But enterprise MRO platforms 
+          like these serve large flag carriers — not the mid-tier airlines, regional operators, and MRO 
+          third-party providers who collectively represent the majority of the market.
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2.5rem;">
+        <div style="border-left: 1px solid var(--border-amber); padding-left: 1.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;">Market Size (2025)</div>
+          <div style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 500; color: var(--amber);">$84.2B</div>
+          <div style="font-size: 0.85rem; color: var(--ice-dim); margin-top: 0.3rem;">Growing to $134.7B by 2034 at ~5.3% CAGR</div>
+        </div>
+        <div style="border-left: 1px solid var(--border-amber); padding-left: 1.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;">AI Predictive Maint. Segment</div>
+          <div style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 500; color: var(--amber);">28.5%</div>
+          <div style="font-size: 0.85rem; color: var(--ice-dim); margin-top: 0.3rem;">Share of AI in aviation market — single largest application segment in 2025</div>
+        </div>
+        <div style="border-left: 1px solid var(--border-amber); padding-left: 1.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;">VC Funding (2024)</div>
+          <div style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 500; color: var(--amber);">$300M+</div>
+          <div style="font-size: 0.85rem; color: var(--ice-dim); margin-top: 0.3rem;">Equity directed at predictive maintenance platforms — institutional conviction is high</div>
+        </div>
+        <div style="border-left: 1px solid var(--border-amber); padding-left: 1.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;">Underserved Segment</div>
+          <div style="font-family: var(--font-mono); font-size: 2.4rem; font-weight: 500; color: var(--amber);">Mid-tier</div>
+          <div style="font-size: 0.85rem; color: var(--ice-dim); margin-top: 0.3rem;">Airlines flying 20–120 aircraft — too large to ignore predictive intelligence, too small for Airbus Skywise contracts</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 5rem; border-top: 1px solid var(--border); padding-top: 4rem;">
+      <div class="section-tag">Why Driftera Wins</div>
+      <h3 style="font-family: var(--font-serif); font-size: 2rem; font-weight: 400; color: var(--white); margin-bottom: 3rem; line-height: 1.2;">Built for operators who run planes,<br><em>not for engineers who design them.</em></h3>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border);">
+        <div style="background: var(--navy); padding: 2rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--amber); margin-bottom: 1rem;">Mid-Market Focus</div>
+          <p style="font-size: 0.88rem; color: var(--ice-dim); line-height: 1.75;">We don't need a 12-month implementation cycle. Driftera integrates in weeks and is priced for fleets of 20–150 aircraft — not just flag carriers with eight-figure IT budgets.</p>
+        </div>
+        <div style="background: var(--navy); padding: 2rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--amber); margin-bottom: 1rem;">Cross-Fleet Intelligence</div>
+          <p style="font-size: 0.88rem; color: var(--ice-dim); line-height: 1.75;">Failure patterns from one operator's fleet inform predictions for another's. Privacy-preserved cross-fleet training means our models improve as the network grows — a structural moat.</p>
+        </div>
+        <div style="background: var(--navy); padding: 2rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--amber); margin-bottom: 1rem;">Full-Stack Breadth</div>
+          <p style="font-size: 0.88rem; color: var(--ice-dim); line-height: 1.75;">Most competitors solve one problem — predict OR document OR schedule. Driftera connects all four modules so operators don't need four vendors to replace five spreadsheets.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: FOUNDER
+═══════════════════════════════════════ -->
+<div id="page-founder" class="page">
+  <section style="padding-top: 10rem;">
+    <div class="founder-section">
+      <div class="founder-portrait fade-up">
+        <div class="founder-frame">
+          <div class="founder-initials">SK</div>
+          <div class="founder-corner fc-tl"></div>
+          <div class="founder-corner fc-br"></div>
+          <div class="founder-name-tag">Shivam Kashyap · Founder</div>
+        </div>
+      </div>
+      <div class="founder-content">
+        <div class="section-tag">Founder</div>
+        <h2 style="font-family: var(--font-serif); font-size: clamp(1.8rem, 3vw, 2.8rem); font-weight: 400; color: var(--white); line-height: 1.1; margin-bottom: 0.5rem;">Shivam Kashyap</h2>
+        <div style="font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 1.5rem;">Founder & CEO, Driftera</div>
+
+        <blockquote class="founder-quote">
+          Aviation maintenance isn't a data problem — it's a decision problem. We have the sensors, the records, the history. What we've been missing is the intelligence layer that connects them into an action.
+        </blockquote>
+
+        <p class="founder-bio">
+          Shivam Kashyap has spent years at the intersection of aerospace operations and data systems — close enough to the hangar floor to understand why planes get grounded, and close enough to the code to build the tools that prevent it.
+        </p>
+        <p class="founder-bio">
+          His background spans airline operations analysis, MRO workflow optimisation, and production ML systems. He has observed first-hand how mid-tier carriers absorb AOG costs that predictive intelligence could eliminate — and how the tooling gap between enterprise MRO platforms and what most operators can actually implement has remained stubbornly wide.
+        </p>
+        <p class="founder-bio">
+          Driftera was founded on a single conviction: that the most impactful thing you can do for aviation safety and economics is make it easier for a maintenance controller to act on the right information at the right time. Not harder.
+        </p>
+
+        <div class="founder-creds">
+          <div class="cred-item">Aviation operations & MRO workflow background</div>
+          <div class="cred-item">Production ML systems and data engineering</div>
+          <div class="cred-item">Deep domain familiarity with AMOS, TRAX, and SAP PM ecosystems</div>
+          <div class="cred-item">Built Driftera to close the mid-market intelligence gap in MRO</div>
+        </div>
+
+        <div style="margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+          <p style="font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.2rem;">Get in touch</p>
+          <a class="btn-primary" onclick="showPage('contact')">Contact Shivam →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: CONTACT
+═══════════════════════════════════════ -->
+<div id="page-contact" class="page">
+  <section style="padding-top: 10rem; min-height: 90vh;">
+    <div class="contact-inner">
+      <div class="section-tag">Get in Touch</div>
+      <h2 class="section-title">Ready to stop<br>reacting to failures<br>and <em>start predicting them?</em></h2>
+      <p class="section-body">Whether you're an airline operations director, an MRO provider, or an investor — we'd like to talk.</p>
+    </div>
+
+    <div class="contact-grid">
+      <div class="contact-form">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" placeholder="Captain Jane Doe" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Organisation</label>
+          <input class="form-input" type="text" placeholder="IndiGo / Air Arabia / SR Technics" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="you@airline.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">I am a —</label>
+          <select class="form-input">
+            <option value="" disabled selected>Select...</option>
+            <option>Airline / Fleet Operator</option>
+            <option>MRO Service Provider</option>
+            <option>Investor</option>
+            <option>OEM / Supplier</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-input" rows="5" placeholder="Tell us about your fleet, your current MRO stack, or what's keeping you up at night."></textarea>
+        </div>
+        <button class="btn-primary" style="align-self: flex-start; margin-top: 0.5rem;" onclick="handleFormSubmit()">Send Message →</button>
+      </div>
+
+      <div class="contact-info">
+        <div class="contact-block">
+          <div class="contact-block-label">Direct</div>
+          <div class="contact-block-value">founder@driftera.aero<br>+91 &nbsp;— available on request</div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-label">Based in</div>
+          <div class="contact-block-value">India<br>Operating globally across APAC, Gulf, and European MRO markets</div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-label">For investors</div>
+          <div class="contact-block-value">We are in early conversations with operators. Deck and data room available under NDA on request.</div>
+        </div>
+        <div class="contact-block">
+          <div class="contact-block-label">Demo availability</div>
+          <div class="contact-block-value">Platform demonstrations available for qualified operators. 45-minute live walkthrough with fleet-specific data scenarios.</div>
+        </div>
+        <div style="margin-top: 1rem; padding: 1.5rem; border: 1px solid var(--border-amber); background: var(--amber-glow2);">
+          <div style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.5rem;">Response time</div>
+          <div style="font-size: 0.88rem; color: var(--ice-dim); line-height: 1.65;">We respond to all qualified enquiries within 24 hours. For urgent AOG-related questions, contact us directly.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">DRIFTERA · Aviation MRO Intelligence</div>
+  <ul class="footer-links">
+    <li><a onclick="showPage('home')">Home</a></li>
+    <li><a onclick="showPage('product')">Product</a></li>
+    <li><a onclick="showPage('founder')">Founder</a></li>
+    <li><a onclick="showPage('contact')">Contact</a></li>
+  </ul>
+  <div class="footer-copy">© 2025 Driftera. All rights reserved.</div>
+</footer>
+
+<script>
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    const navEl = document.getElementById('nav-' + id);
+    if (navEl) navEl.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    initScrollAnimations();
+  }
+
+  function switchTab(id) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function initScrollAnimations() {
+    setTimeout(() => {
+      const els = document.querySelectorAll('.page.active .fade-up');
+      els.forEach((el, i) => {
+        setTimeout(() => {
+          el.classList.add('visible');
+        }, i * 80);
+      });
+    }, 100);
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.page.active .fade-up').forEach(el => observer.observe(el));
+  }
+
+  function toggleMobile() {
+    const links = document.querySelector('.nav-links');
+    if (links.style.display === 'flex') {
+      links.style.display = 'none';
+    } else {
+      links.style.display = 'flex';
+      links.style.flexDirection = 'column';
+      links.style.position = 'absolute';
+      links.style.top = '100%';
+      links.style.left = '0';
+      links.style.right = '0';
+      links.style.background = 'rgba(11,18,32,0.98)';
+      links.style.padding = '1.5rem';
+      links.style.gap = '1rem';
+      links.style.borderBottom = '1px solid rgba(212,228,240,0.08)';
+    }
+  }
+
+  function handleFormSubmit() {
+    const btn = event.target;
+    btn.textContent = 'Message sent ✓';
+    btn.style.background = '#28B464';
+    btn.style.color = '#fff';
+    setTimeout(() => {
+      btn.textContent = 'Send Message →';
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 3000);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initScrollAnimations();
+  });
+
+  window.addEventListener('scroll', () => {
+    const els = document.querySelectorAll('.page.active .fade-up:not(.visible)');
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.9) el.classList.add('visible');
+    });
+  });
+</script>
+</body>
+</html>
